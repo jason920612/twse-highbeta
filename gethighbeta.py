@@ -30,6 +30,12 @@ def calculate_beta(stock_returns, market_returns):
     beta = cov / market_var
     return beta
 
+# 獲取股票的交易量
+def get_stock_volume(stock_id):
+    stock = yf.Ticker(f"{stock_id}.TW")
+    hist = stock.history(period="90d")
+    return hist["Volume"]
+
 # 主函數
 def main():
     component_stocks = get_component_stocks()
@@ -43,7 +49,14 @@ def main():
         market_returns = market_prices.pct_change().dropna()
 
         beta = calculate_beta(stock_returns, market_returns)
-        betas[stock_id] = beta
+        
+        # 獲取股票的交易量
+        stock_volume = get_stock_volume(stock_id)
+        average_volume = (stock_volume * stock_prices).mean()  # 計算90個交易日的平均成交額
+
+        # 如果平均成交額大於一千萬，則保留該股票
+        if average_volume > 10000000:
+            betas[stock_id] = beta
 
     # 找到前30高BETA值的股票
     top_30_betas = sorted(betas.items(), key=lambda x: x[1], reverse=True)[:30]
